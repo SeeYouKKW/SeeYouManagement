@@ -73,7 +73,22 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
 
             @Override
             public void onMonthScroll(Date firstDayOfNewMonth) {
+
+
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(firstDayOfNewMonth);
+                String year = Integer.toString(cal.get(Calendar.YEAR));
+                String month = Integer.toString(cal.get(Calendar.MONTH));
+
                 actionBar.setTitle(monthformat.format(firstDayOfNewMonth));
+                db.child(year).child(month).get().addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        Log.e("firebase", "Error getting data", task.getException());
+                    }
+                    else {
+                        Log.d("firebase", String.valueOf(task.getResult().getValue()));
+                    }
+                });
 
             }
         });
@@ -124,7 +139,19 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
 
         Log.d("aa",fbAuth.getUid());
 
-        db.child("bookings").push().setValue(new Termin(fbAuth.getUid(),hourStart, minuteStart, hourEnd, minuteEnd));
+        String user = fbAuth.getUid();
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(selectedDate);
+        String year = Integer.toString(cal.get(Calendar.YEAR));
+        String month = Integer.toString(cal.get(Calendar.MONTH));
+        String day = Integer.toString(cal.get(Calendar.DAY_OF_MONTH));
+
+        Termin termin = new Termin(user, Rooms.Room1, day, hourStart, minuteStart, hourEnd, minuteEnd);
+
+        db.child("bookings").child(year).child(month).push().setValue(termin);
+
+
+
 
     }
 
@@ -133,5 +160,8 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
 
     }
     private void addEvent(Date selectedDate) {
+
+
+
     }
 }

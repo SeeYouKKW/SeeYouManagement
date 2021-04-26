@@ -7,22 +7,26 @@ import com.google.firebase.database.IgnoreExtraProperties;
 public class Termin {
 
 
-
-        public String userID;
+    public Rooms room;
+    public String userID, day;
         public int hourStart,  minuteStart, hourEnd,  minuteEnd;
 
 
-        public Termin() {
-            // Default constructor required for calls to DataSnapshot.getValue(User.class)
-        }
+    public Termin() {
 
-        public Termin(String userID, int hourStart, int minuteStart, int hourEnd, int minuteEnd) {
-            this.userID = userID;
+    }
+
+        public Termin(String uid, Rooms room, String day, int hourStart, int minuteStart, int hourEnd, int minuteEnd) {
+            this.userID = uid;
+            this.room = room;
+            this.day = day;
             this.hourStart = hourStart;
             this.minuteStart = minuteStart;
             this.hourEnd = hourEnd;
             this.minuteEnd = minuteEnd;
         }
+
+
 
 
 }
