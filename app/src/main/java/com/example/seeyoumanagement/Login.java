@@ -57,7 +57,8 @@ public class Login extends AppCompatActivity {
 
         if (!username.equals("DEFAULT")){
             pb_process.setVisibility(View.VISIBLE);
-
+            txt_nutzername.setText(username);
+            txt_passwort.setText(passwort);
             fbAuth.signInWithEmailAndPassword(username, passwort).addOnCompleteListener(task -> {
                 if (task.isSuccessful()){
                     startActivity(new Intent(getApplicationContext(),MainActivity.class));
