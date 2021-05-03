@@ -3,27 +3,26 @@ package com.example.seeyoumanagement;
 
 import com.google.firebase.database.IgnoreExtraProperties;
 
+import java.util.Date;
+
 @IgnoreExtraProperties
 public class Termin {
 
 
     public Rooms room;
-    public String userID, day;
-        public int hourStart,  minuteStart, hourEnd,  minuteEnd;
+    public String userID;
+    public Date dateStart, dateEnd;
 
 
     public Termin() {
 
     }
 
-        public Termin(String uid, Rooms room, String day, int hourStart, int minuteStart, int hourEnd, int minuteEnd) {
+        public Termin(String uid, Rooms room, Date dateStart, Date dateEnd) {
             this.userID = uid;
             this.room = room;
-            this.day = day;
-            this.hourStart = hourStart;
-            this.minuteStart = minuteStart;
-            this.hourEnd = hourEnd;
-            this.minuteEnd = minuteEnd;
+            this.dateStart = dateStart;
+            this.dateEnd = dateEnd;
         }
 
 

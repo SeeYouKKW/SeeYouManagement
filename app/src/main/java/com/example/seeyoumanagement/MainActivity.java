@@ -73,7 +73,17 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
                 termine.clear();
                 for (Event event : events) {
                     Termin t = (Termin) event.getData();
-                    termine.add(Integer.toString(t.hourStart) + t.hourEnd);
+                    calendar.setTime(t.dateStart);
+                    String hour = Integer.toString(calendar.get(Calendar.HOUR_OF_DAY));
+                    String minute = Integer.toString(calendar.get(Calendar.MINUTE));
+
+                    calendar.setTime(t.dateEnd);
+                    String hour2 = Integer.toString(calendar.get(Calendar.HOUR_OF_DAY));
+                    String minute2 = Integer.toString(calendar.get(Calendar.MINUTE));
+
+
+
+                    termine.add(hour + ":" + minute + " - " + hour2 + ":" + minute2);
                 }
 
 
@@ -136,26 +146,43 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
         String user = fbAuth.getUid();
 
         calendar.setTime(selectedDate);
-        String year = Integer.toString(calendar.get(Calendar.YEAR));
-        String month = Integer.toString(calendar.get(Calendar.MONTH));
-        String day = Integer.toString(calendar.get(Calendar.DAY_OF_MONTH));
+        calendar.set(Calendar.HOUR_OF_DAY, hourStart);
+        calendar.set(Calendar.MINUTE, minuteStart);
+
+        Date dateStart = calendar.getTime();
+
+
+        calendar.set(Calendar.HOUR_OF_DAY, hourEnd);
+        calendar.set(Calendar.MINUTE, minuteEnd);
+
+        Date dateEnd = calendar.getTime();
+
+
 
         Rooms room = Rooms.Room1;
 
 
 
-        Termin termin = new Termin(user, room, day, hourStart, minuteStart, hourEnd, minuteEnd);
+        Termin termin = new Termin(user, room, dateStart, dateEnd);
 
 
-        db.child("bookings").child(year).child(month).orderByChild("day").equalTo(day).
-                                                        orderByChild("room").equalTo(String.valueOf(room)).get().addOnCompleteListener(task -> {
+        db.child("bookings").orderByChild("room").equalTo(String.valueOf(room)).get().addOnCompleteListener(task -> {
             if (!task.isSuccessful()) {
                 Log.e("firebase", "Error getting data", task.getException());
             }
             else {
 
                 DataSnapshot bookings = task.getResult();
-                checkData(bookings);
+                if(checkData(termin,bookings)){
+
+                    System.out.println("works");
+                    db.child("bookings").push().setValue(termin).addOnCompleteListener(task2 -> {
+                        updateUi(selectedDate);
+                    });
+                }
+                else {
+                    System.out.println("fail");
+                }
 
 
             }});
@@ -163,22 +190,24 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
 
 
         
-        db.child("bookings").child(year).child(month).push().setValue(termin).addOnCompleteListener(task -> {
-            updateUi(selectedDate);
-        });
+
 
 
 
 
     }
 
-    private boolean checkData(DataSnapshot bookings) {
+    private boolean checkData(Termin termin1, DataSnapshot bookings) {
 
         for (DataSnapshot book : bookings.getChildren()) {
-            Termin buchung = book.getValue(Termin.class);
-
-
+            Termin termin2 = book.getValue(Termin.class);
+            if (isOverlapping(termin1.dateStart, termin1.dateEnd, termin2.dateStart, termin2.dateEnd)){
+                Log.d("checkData", termin1.dateStart.toString() +  termin1.dateEnd.toString());
+                Log.d("checkData", termin2.dateStart.toString() +  termin2.dateEnd.toString());
+                return false;
+            }
         }
+        return true;
     }
 
 
@@ -188,11 +217,9 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
         String user = fbAuth.getUid();
 
         calendar.setTime(selectedDate);
-        String year = Integer.toString(calendar.get(Calendar.YEAR));
-        String month = Integer.toString(calendar.get(Calendar.MONTH));
         String day = Integer.toString(calendar.get(Calendar.DAY_OF_MONTH));
 
-        db.child("bookings").child(year).child(month).orderByChild("day").equalTo(day).get().addOnCompleteListener(task -> {
+        db.child("bookings").orderByChild("dateStart").get().addOnCompleteListener(task -> {
             if (!task.isSuccessful()) {
                 Log.e("firebase", "Error getting data", task.getException());
             }
@@ -237,8 +264,10 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
         String year = Integer.toString(calendar.get(Calendar.YEAR));
         String month = Integer.toString(calendar.get(Calendar.MONTH));
 
+        actionBar.setTitle(monthformat.format(date));
 
-        db.child("bookings").child(year).child(month).get().addOnCompleteListener(task -> {
+
+        db.child("bookings").get().addOnCompleteListener(task -> {
             if (!task.isSuccessful()) {
                 Log.e("firebase", "Error getting data", task.getException());
             }
@@ -255,7 +284,7 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
                     Termin buchung = book.getValue(Termin.class);
 
 
-                    calendar.set(Integer.parseInt(year)  , Integer.parseInt(month)  , Integer.parseInt(buchung.day));
+                    calendar.setTime(buchung.dateStart);
 
 
                     Event ev1 = new Event(Color.GREEN, calendar.getTimeInMillis(), buchung);
@@ -273,6 +302,20 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
     }
 
     public boolean isOverlapping(Date start1, Date end1, Date start2, Date end2) {
-        return start1.before(end2) && start2.before(end1);
+
+        Date firstEnd;
+        Date secondEnd;
+
+        if (start1.before(start2)){
+
+            firstEnd = end1;
+            secondEnd = end2;
+        }
+        else
+        {
+            firstEnd = end2;
+            secondEnd = end1;
+        }
+        return !firstEnd.before(secondEnd);
     }
 }
