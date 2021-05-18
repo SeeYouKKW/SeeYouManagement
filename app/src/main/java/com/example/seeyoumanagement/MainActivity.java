@@ -5,14 +5,18 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.gridlayout.widget.GridLayout;
 
 import android.app.FragmentManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ArrayAdapter;
+
 import android.widget.ListView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 
 import com.github.sundeepk.compactcalendarview.CompactCalendarView;
@@ -22,14 +26,19 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.mcsoft.timerangepickerdialog.RangeTimePickerDialog;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -38,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
 
 
     final SimpleDateFormat monthformat = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
-
+    final SimpleDateFormat dayformat = new SimpleDateFormat("yyyy.MM.dd", Locale.getDefault());
 
     private DatabaseReference db;
 
@@ -48,12 +57,17 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
     FloatingActionButton btn_sub;
     ListView listview;
     ArrayAdapter adapter;
+    HashMap<Rooms,Integer> befuellung;
+
+    GridLayout gridlayout;
 
 
     Calendar calendar;
-    ArrayList<String> termine;
+    ArrayList<Termin> termine;
     Date selectedDate;
     private FirebaseAuth fbAuth;
+
+    Rooms selectedRoom;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -66,28 +80,7 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
         compactCalendarView.setListener(new CompactCalendarView.CompactCalendarViewListener() {
             @Override
             public void onDayClick(Date dateClicked) {
-                List<Event> events = compactCalendarView.getEvents(dateClicked);
-                selectedDate = dateClicked;
-                Toast.makeText(MainActivity.this, String.format("%s", dateClicked), Toast.LENGTH_SHORT).show();
-
-                termine.clear();
-                for (Event event : events) {
-                    Termin t = (Termin) event.getData();
-                    calendar.setTime(t.dateStart);
-                    String hour = Integer.toString(calendar.get(Calendar.HOUR_OF_DAY));
-                    String minute = Integer.toString(calendar.get(Calendar.MINUTE));
-
-                    calendar.setTime(t.dateEnd);
-                    String hour2 = Integer.toString(calendar.get(Calendar.HOUR_OF_DAY));
-                    String minute2 = Integer.toString(calendar.get(Calendar.MINUTE));
-
-
-
-                    termine.add(hour + ":" + minute + " - " + hour2 + ":" + minute2);
-                }
-
-
-                adapter.notifyDataSetChanged();
+                updateListview(dateClicked);
             }
 
             @Override
@@ -96,6 +89,7 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
 
 
             updateUi(firstDayOfNewMonth);
+            updateListview(selectedDate);
 
             }
         });
@@ -109,10 +103,25 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
         });
     }
 
+    private void updateListview(Date dateClicked) {
+        List<Event> events = compactCalendarView.getEvents(dateClicked);
+        selectedDate = dateClicked;
+
+
+        termine.clear();
+        for (Event event : events) {
+            Termin t = (Termin) event.getData();
+            termine.add(t);
+        }
+
+        sortList();
+        adapter.notifyDataSetChanged();
+    }
+
     private void initComponents() {
         btn_add = findViewById(R.id.btn_add);
         btn_sub = findViewById(R.id.btn_remove);
-
+        gridlayout = findViewById(R.id.gridLayout);
         //btn_add.setEnabled(false);
 
         listview = findViewById(R.id.listview);
@@ -128,13 +137,47 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
         actionBar.setDisplayHomeAsUpEnabled(false);
         actionBar.setTitle(monthformat.format(compactCalendarView.getFirstDayOfCurrentMonth()));
 
-        termine = new ArrayList<String>();
-        adapter = new ArrayAdapter(this,  android.R.layout.simple_list_item_1, termine);
+        termine = new ArrayList<Termin>();
+        adapter = new TerminAdapter(this, termine);
         listview.setAdapter(adapter);
         fbAuth = FirebaseAuth.getInstance();
         db = FirebaseDatabase.getInstance().getReference();
 
+
+
+        befuellung = new HashMap<Rooms, Integer>();
+        db.child("rooms").get().addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) {
+                Log.e("firebase", "Error getting data", task.getException());
+            }
+            else {
+
+                DataSnapshot rooms = task.getResult();
+                for (DataSnapshot room: rooms.getChildren()) {
+                    Rooms r = Rooms.valueOf(room.getKey());
+                    befuellung.put(r, (int) (long) room.getValue());
+                }
+            }
+        });
+
+
+
+        db.child("bookings").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                updateUi(selectedDate);
+                updateListview(selectedDate);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
         calendar = Calendar.getInstance();
+
+        updateUi(selectedDate);
 
 
     }
@@ -144,6 +187,7 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
 
 
         String user = fbAuth.getUid();
+
 
         calendar.setTime(selectedDate);
         calendar.set(Calendar.HOUR_OF_DAY, hourStart);
@@ -157,35 +201,33 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
 
         Date dateEnd = calendar.getTime();
 
+        String day = dayformat.format(selectedDate);
 
 
-        Rooms room = Rooms.Room1;
+        Termin termin = new Termin(user, selectedRoom, dateStart, dateEnd, user + "_" + day);
 
 
-
-        Termin termin = new Termin(user, room, dateStart, dateEnd);
-
-
-        db.child("bookings").orderByChild("room").equalTo(String.valueOf(room)).get().addOnCompleteListener(task -> {
+        db.child("bookings").orderByChild("room").equalTo(String.valueOf(selectedRoom)).get().addOnCompleteListener(task -> {
             if (!task.isSuccessful()) {
                 Log.e("firebase", "Error getting data", task.getException());
             }
             else {
 
                 DataSnapshot bookings = task.getResult();
-                if(checkData(termin,bookings)){
+                if(checkData(termin, bookings, befuellung.get(selectedRoom))){
 
-                    System.out.println("works");
+                    Toast.makeText(MainActivity.this, "Termin hinzugefügt!", Toast.LENGTH_SHORT).show();
                     db.child("bookings").push().setValue(termin).addOnCompleteListener(task2 -> {
                         updateUi(selectedDate);
+                        updateListview(selectedDate);
                     });
                 }
                 else {
-                    System.out.println("fail");
+                    Toast.makeText(MainActivity.this, "Termin kann aufgrund von überfüllten Räumen nicht nizugefügt werden", Toast.LENGTH_SHORT).show();
                 }
-
-
             }});
+
+
 
 
 
@@ -197,17 +239,38 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
 
     }
 
-    private boolean checkData(Termin termin1, DataSnapshot bookings) {
+    public void onClick(View v) {
+        ToggleButton selectedButton = (ToggleButton) v;
+        int count = gridlayout.getChildCount();
+        for(int i = 0 ; i <count ; i++){
+            ToggleButton child = (ToggleButton) gridlayout.getChildAt(i);
+            if (child != selectedButton){
+                child.setChecked(false);
+            }
+        }
 
+        selectedRoom = Rooms.valueOf((String) selectedButton.getText());
+
+
+    }
+
+
+    private boolean checkData(Termin termin1, DataSnapshot bookings, Integer fuelle) {
+
+        int count = 0;
         for (DataSnapshot book : bookings.getChildren()) {
             Termin termin2 = book.getValue(Termin.class);
             if (isOverlapping(termin1.dateStart, termin1.dateEnd, termin2.dateStart, termin2.dateEnd)){
-                Log.d("checkData", termin1.dateStart.toString() +  termin1.dateEnd.toString());
-                Log.d("checkData", termin2.dateStart.toString() +  termin2.dateEnd.toString());
-                return false;
+                if (termin1.userID.equals(termin2.userID)){
+                    return false;
+                }
+                else {
+                    count++;
+                }
+
             }
         }
-        return true;
+        return count<=fuelle;
     }
 
 
@@ -217,28 +280,39 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
         String user = fbAuth.getUid();
 
         calendar.setTime(selectedDate);
-        String day = Integer.toString(calendar.get(Calendar.DAY_OF_MONTH));
+        String day = dayformat.format(selectedDate);
 
-        db.child("bookings").orderByChild("dateStart").get().addOnCompleteListener(task -> {
+
+
+        db.child("bookings").orderByChild("userID_date").equalTo(user + "_" + day).get().addOnCompleteListener(task -> {
             if (!task.isSuccessful()) {
                 Log.e("firebase", "Error getting data", task.getException());
             }
             else {
-
+                boolean deleted = false;
                 DataSnapshot bookings = task.getResult();
-                Log.d("f", bookings.toString());
+
+
                 for (DataSnapshot book : bookings.getChildren()) {
                     Termin buchung = book.getValue(Termin.class);
-                    if (buchung.userID.equals(user)){
-                        book.getRef().removeValue().addOnCompleteListener(task1 -> {
-                            updateUi(selectedDate);
-                        });
-                    }
+                    deleted = true;
+                    book.getRef().removeValue().addOnCompleteListener(task1 -> {
+                        updateUi(selectedDate);
+                        updateListview(selectedDate);
+
+                    });
+
+                }
+                if (deleted)
+                {
+                    Toast.makeText(MainActivity.this, "Termin(e) gelöscht!", Toast.LENGTH_SHORT).show();
                 }
 
             }
 
         });
+
+
 
 
 
@@ -257,12 +331,11 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
 
 
     }
-
+    /*
+    Alle Events herunterladen und dem Calender einführen
+     */
     private void updateUi(Date date){
 
-        calendar.setTime(date);
-        String year = Integer.toString(calendar.get(Calendar.YEAR));
-        String month = Integer.toString(calendar.get(Calendar.MONTH));
 
         actionBar.setTitle(monthformat.format(date));
 
@@ -282,17 +355,13 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
                 for (DataSnapshot book : bookings.getChildren()) {
 
                     Termin buchung = book.getValue(Termin.class);
-
-
                     calendar.setTime(buchung.dateStart);
 
 
-                    Event ev1 = new Event(Color.GREEN, calendar.getTimeInMillis(), buchung);
+                    Event ev1 = new Event(Color.RED, calendar.getTimeInMillis(), buchung);
                     compactCalendarView.addEvent(ev1);
 
                 }
-
-
 
             }
         });
@@ -301,21 +370,18 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
 
     }
 
+    private void sortList(){
+        Collections.sort(termine, new Comparator<Termin>() {
+            @Override
+            public int compare(Termin o1, Termin o2) {
+                return o1.getDateStart().compareTo(o2.getDateStart());
+            }
+        });
+    }
+
     public boolean isOverlapping(Date start1, Date end1, Date start2, Date end2) {
 
-        Date firstEnd;
-        Date secondEnd;
 
-        if (start1.before(start2)){
-
-            firstEnd = end1;
-            secondEnd = end2;
-        }
-        else
-        {
-            firstEnd = end2;
-            secondEnd = end1;
-        }
-        return !firstEnd.before(secondEnd);
+        return start1.before(end2) && end1.after(start2);
     }
 }
