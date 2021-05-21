@@ -10,9 +10,11 @@
         android:id="@+id/calendar"
         android:layout_width="match_parent"
         android:layout_height="300dp"
+        android:visibility="visible"
         app:compactCalendarBackgroundColor="#ffe95451"
         app:compactCalendarCurrentDayBackgroundColor="#B71C1C"
         app:compactCalendarCurrentSelectedDayBackgroundColor="#E57373"
+        app:compactCalendarEventIndicatorStyle="no_fill_large_indicator"
         app:compactCalendarMultiEventIndicatorColor="#fff"
         app:compactCalendarTargetHeight="250dp"
         app:compactCalendarTextColor="#fff"
@@ -26,45 +28,107 @@
         android:id="@+id/gridLayout"
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        app:columnCount="5"
+        android:visibility="visible"
+        app:columnCount="6"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/calendar"
         app:rowCount="3">
 
-        <ImageButton
-            android:id="@+id/imageButton6"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:srcCompat="@android:drawable/checkbox_off_background" />
+        <ToggleButton
+            android:id="@+id/Button1"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/room_button"
+            android:onClick="onClick"
+            android:text="Room4"
+            android:textOff="@null"
+            android:textOn="@null"
+            app:layout_column="5"
+            app:layout_row="2" />
 
-        <ImageButton
-            android:id="@+id/imageButton5"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:srcCompat="@android:drawable/btn_dialog" />
-
-        <ImageButton
-            android:id="@+id/imageButton4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <ToggleButton
+            android:id="@+id/Button2"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/room_button"
+            android:onClick="onClick"
+            android:text="Room3"
+            android:textOff="@null"
+            android:textOn="@null"
             app:layout_column="2"
-            app:layout_row="0"
-            app:srcCompat="@drawable/abc_vector_test" />
+            app:layout_row="2" />
 
+        <ToggleButton
+            android:id="@+id/Button3"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/room_button"
+            android:onClick="onClick"
+            android:text="Room2"
+            android:textOff="@null"
+            android:textOn="@null"
+            app:layout_column="1"
+            app:layout_row="2" />
+
+        <ToggleButton
+            android:id="@+id/Button5"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/room_button"
+            android:onClick="onClick"
+            android:text="Room7"
+            android:textOff="@null"
+            android:textOn="@null"
+            app:layout_column="5"
+            app:layout_row="0" />
+
+        <ToggleButton
+            android:id="@+id/Button6"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/room_button"
+            android:onClick="onClick"
+            android:text="Room5"
+            android:textOff="@null"
+            android:textOn="@null"
+            app:layout_column="1"
+            app:layout_row="0" />
+
+        <ToggleButton
+            android:id="@+id/Button7"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/room_button"
+            android:onClick="onClick"
+            android:text="Room6"
+            android:textOff="@null"
+            android:textOn="@null"
+            app:layout_column="2"
+            app:layout_row="0" />
+
+        <ToggleButton
+            android:id="@+id/Button8"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/room_button"
+            android:checked="true"
+            android:onClick="onClick"
+            android:text="Room1"
+            android:textOff="@null"
+            android:textOn="@null"
+            app:layout_column="0"
+            app:layout_row="2" />
     </androidx.gridlayout.widget.GridLayout>
 
     <ListView
         android:id="@+id/listview"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_width="0dp"
+        android:layout_height="170dp"
         android:background="#ffe95451"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/gridLayout"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btn_add"

@@ -143,6 +143,8 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
         fbAuth = FirebaseAuth.getInstance();
         db = FirebaseDatabase.getInstance().getReference();
 
+        selectedRoom = Rooms.Room1;
+
 
 
         befuellung = new HashMap<Rooms, Integer>();
@@ -250,6 +252,7 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
         }
 
         selectedRoom = Rooms.valueOf((String) selectedButton.getText());
+
 
 
     }
