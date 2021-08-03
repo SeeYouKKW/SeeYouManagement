@@ -27,14 +27,14 @@ public class TerminAdapter extends ArrayAdapter<Termin> {
     final SimpleDateFormat hourformat = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
     private DatabaseReference db;
-    HashMap<String,String> userRef;
+    HashMap<String, UserInfo> userRef;
 
 
 
     public TerminAdapter(@NonNull Context context,  @NonNull List<Termin> termine) {
         super(context, 0, termine);
         db = FirebaseDatabase.getInstance().getReference();
-        userRef = new HashMap<String, String>();
+        userRef = new HashMap<String, UserInfo>();
         db.child("users").get().addOnCompleteListener(task -> {
             if (!task.isSuccessful()) {
                 Log.e("firebase", "Error getting data", task.getException());
@@ -44,7 +44,8 @@ public class TerminAdapter extends ArrayAdapter<Termin> {
                 DataSnapshot rooms = task.getResult();
                 for (DataSnapshot user: rooms.getChildren()) {
                     String id = user.getKey();
-                    userRef.put(id, (String) user.getValue());
+                    UserInfo buchung = user.getValue(UserInfo.class);
+                    userRef.put(id, buchung);
                 }
             }
         });
@@ -74,7 +75,7 @@ public class TerminAdapter extends ArrayAdapter<Termin> {
 
         Termin termin = getItem(position);
 
-        String name = userRef.get(termin.getUserID());
+        String name = userRef.get(termin.getUserID()).getName();
         if (termin != null) {
             if (name != null){
                 txt_user.setText(name);

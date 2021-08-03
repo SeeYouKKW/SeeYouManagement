@@ -80,7 +80,10 @@ public class Login extends AppCompatActivity {
         pb_process = findViewById(R.id.progressBar_cyclic);
     }
 
-
+    /**
+     * ver4sucht sich einzuloggen
+     * wenn es klappt --> MainActivity
+     */
     private void login() {
         String name = txt_nutzername.getText().toString().trim();
         String passwort = txt_passwort.getText().toString().trim();

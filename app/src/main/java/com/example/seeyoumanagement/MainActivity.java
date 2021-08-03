@@ -361,7 +361,7 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
                     calendar.setTime(buchung.dateStart);
 
 
-                    Event ev1 = new Event(Color.RED, calendar.getTimeInMillis(), buchung);
+                    Event ev1 = new Event(Color.BLACK, calendar.getTimeInMillis(), buchung);
                     compactCalendarView.addEvent(ev1);
 
                 }
