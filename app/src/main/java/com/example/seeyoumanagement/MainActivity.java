@@ -21,8 +21,6 @@ import android.widget.ToggleButton;
 
 import com.github.sundeepk.compactcalendarview.CompactCalendarView;
 import com.github.sundeepk.compactcalendarview.domain.Event;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -334,8 +332,8 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
 
 
     }
-    /*
-    Alle Events herunterladen und dem Calender einführen
+    /**
+    Alle Events löschen und neu herunterladen und dem Calender einführen
      */
     private void updateUi(Date date){
 
@@ -354,23 +352,56 @@ public class MainActivity extends AppCompatActivity implements RangeTimePickerDi
                 DataSnapshot bookings = task.getResult();
 
 
+                HashMap<Integer, Integer> busycount = new HashMap<>();
+                for (DataSnapshot book : bookings.getChildren()) {
+
+                    Termin buchung = book.getValue(Termin.class);
+                    calendar.setTime(buchung.dateStart);
+
+                    if (busycount.containsKey(calendar.get(Calendar.DAY_OF_YEAR)))
+                    {
+                        busycount.put(calendar.get(Calendar.DAY_OF_YEAR), busycount.get(calendar.get(Calendar.DAY_OF_YEAR)) + 1);
+                    }
+                    else{
+                        busycount.put(calendar.get(Calendar.DAY_OF_YEAR), 1);
+                    }
+
+                }
+
+                System.out.println(busycount);
 
                 for (DataSnapshot book : bookings.getChildren()) {
 
                     Termin buchung = book.getValue(Termin.class);
                     calendar.setTime(buchung.dateStart);
 
-
-                    Event ev1 = new Event(Color.BLACK, calendar.getTimeInMillis(), buchung);
+                    Event ev1 = new Event(trafficLightColors(busycount.get(calendar.get(Calendar.DAY_OF_YEAR))), calendar.getTimeInMillis(), buchung);
                     compactCalendarView.addEvent(ev1);
 
+
                 }
+
+
 
             }
         });
 
 
 
+    }
+    private int trafficLightColors(int size){
+        if (size < 2)
+        {
+            return Color.argb(100, 0, 255, 100);
+        }
+        else if (size > 2)
+        {
+            return Color.argb(100, 255, 0, 0);
+        }
+        else
+        {
+            return Color.argb(100, 255, 255, 0);
+        }
     }
 
     private void sortList(){
