@@ -7,6 +7,10 @@ public class Timerange {
     int hourEnd;
     int minuteEnd;
 
+    public Timerange(){
+
+    }
+
     public Timerange(int hourStart, int minuteStart, int hourEnd, int minuteEnd){
         this.hourStart = hourStart;
         this.minuteStart = minuteStart;

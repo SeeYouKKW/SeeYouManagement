@@ -5,25 +5,27 @@ import com.google.firebase.database.IgnoreExtraProperties;
 
 import java.time.DayOfWeek;
 import java.util.HashMap;
+import java.util.Map;
 
 @IgnoreExtraProperties
 public class UserInfo {
 
-    String name;
-    HashMap<DayOfWeek, Timerange> workingTime;
+    public String name;
+    public Map<String, Timerange> workingTime;
 
 
 
-    public UserInfo(){
+    public UserInfo() {
 
-    }
-    public UserInfo(String name) {
-        this.name = name;
         this.workingTime = new HashMap<>();
 
     }
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public void setTimerange(DayOfWeek day, Timerange timerange){
-        workingTime.put(day, timerange);
+        workingTime.put(day.name(), timerange);
     }
 
     public void resetWorkingTIme(){
@@ -32,5 +34,11 @@ public class UserInfo {
 
     public String getName() {
         return name;
+    }
+
+
+    public boolean checkforData() {
+
+        return name.length() > 2 && !workingTime.isEmpty();
     }
 }
